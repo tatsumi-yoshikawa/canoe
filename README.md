@@ -1,2 +1,2 @@
 # canoe
-SNS
+New SNS
