@@ -11,23 +11,39 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import os
 import environ # django-environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+env = environ.Env(
+    # set casting, default value
+    SECRET_KEY=(str, ''), 
+    DEBUG=(bool, True), 
+    ALLOWED_HOSTS=(list, []), 
+    SESSION_COOKIE_SECURE=(bool, False), 
+    CSRF_COOKIE_SECURE=(bool, False), 
+    SECURE_CONTENT_TYPE_NOSNIFF=(bool, True), 
+    SECURE_HSTS_SECONDS=(int, 0), 
+    SECURE_HSTS_INCLUDE_SUBDOMAINS=(bool, False), 
+    SECURE_SSL_REDIRECT=(bool, False), 
+    SECURE_PROXY_SSL_HEADER=(tuple, None), 
+)
+
+# Take environment variables from .env file
+environ.Env.read_env(BASE_DIR / '.env')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-x1d1lner+44cp)k))ycy0q1te!9(a&g)gw0m&=sksqn&ac6ush'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -122,3 +138,16 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Security settings
+
+SESSION_COOKIE_SECURE = env('SESSION_COOKIE_SECURE')
+CSRF_COOKIE_SECURE = env('CSRF_COOKIE_SECURE')
+
+SECURE_CONTENT_TYPE_NOSNIFF = env('SECURE_CONTENT_TYPE_NOSNIFF')
+
+SECURE_HSTS_SECONDS = env('SECURE_HSTS_SECONDS')
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env('SECURE_HSTS_INCLUDE_SUBDOMAINS')
+
+SECURE_SSL_REDIRECT = env('SECURE_SSL_REDIRECT')
+SECURE_PROXY_SSL_HEADER = env('SECURE_PROXY_SSL_HEADER')
