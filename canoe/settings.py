@@ -134,20 +134,38 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# 本番環境ですべての静的ファイルを配信のために「一時的に」集約する場所
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static', 
+]
+
+
+# Media files
+MEDIA_URL = 'media/'
+
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # Security settings
 
 SESSION_COOKIE_SECURE = env('SESSION_COOKIE_SECURE')
+
 CSRF_COOKIE_SECURE = env('CSRF_COOKIE_SECURE')
 
 SECURE_CONTENT_TYPE_NOSNIFF = env('SECURE_CONTENT_TYPE_NOSNIFF')
 
 SECURE_HSTS_SECONDS = env('SECURE_HSTS_SECONDS')
+
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env('SECURE_HSTS_INCLUDE_SUBDOMAINS')
 
 SECURE_SSL_REDIRECT = env('SECURE_SSL_REDIRECT')
+
 SECURE_PROXY_SSL_HEADER = env('SECURE_PROXY_SSL_HEADER')
