@@ -1,6 +1,9 @@
 # memo
 memo.py
 
+# Others
+Others/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
