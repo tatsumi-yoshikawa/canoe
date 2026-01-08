@@ -1,1 +1,248 @@
-<h1>index.html</h1>
+<!-- <h1>index.html</h1>
+<h2>Claude による</h2> -->
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重力スケッチボード</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #canvas {
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            cursor: crosshair;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 25px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #clearBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        #clearBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+        #gravityToggle {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        #gravityToggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+        #gravityToggle.off {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .info {
+            position: absolute;
+            bottom: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button id="clearBtn">クリア</button>
+        <button id="gravityToggle">重力: ON</button>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div class="info">マウスをドラッグして描画 | 描いた線が重力で落下します</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = Math.min(window.innerWidth - 40, 1200);
+        canvas.height = Math.min(window.innerHeight - 120, 700);
+
+        let particles = [];
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let gravityEnabled = true;
+        let hue = 0;
+
+        class Particle {
+            constructor(x, y, vx, vy, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.life = 1;
+                this.size = Math.random() * 3 + 2;
+                this.gravity = 0.15;
+                this.bounce = 0.7;
+                this.friction = 0.99;
+            }
+
+            update() {
+                if (gravityEnabled) {
+                    this.vy += this.gravity;
+                    this.vx *= this.friction;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 床との衝突
+                if (this.y + this.size > canvas.height) {
+                    this.y = canvas.height - this.size;
+                    this.vy *= -this.bounce;
+                    this.vx *= this.friction;
+                    
+                    if (Math.abs(this.vy) < 0.5) {
+                        this.vy = 0;
+                    }
+                }
+
+                // 壁との衝突
+                if (this.x + this.size > canvas.width || this.x - this.size < 0) {
+                    this.vx *= -this.bounce;
+                    this.x = this.x + this.size > canvas.width ? 
+                             canvas.width - this.size : this.size;
+                }
+
+                // 天井との衝突
+                if (this.y - this.size < 0) {
+                    this.y = this.size;
+                    this.vy *= -this.bounce;
+                }
+
+                this.life -= 0.002;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function createParticles(x, y, prevX, prevY) {
+            const distance = Math.hypot(x - prevX, y - prevY);
+            const steps = Math.max(1, Math.floor(distance / 5));
+            
+            for (let i = 0; i < steps; i++) {
+                const t = i / steps;
+                const px = prevX + (x - prevX) * t;
+                const py = prevY + (y - prevY) * t;
+                
+                const angle = Math.atan2(y - prevY, x - prevX);
+                const speed = Math.min(distance / 10, 5);
+                
+                const color = `hsl(${hue}, 100%, 60%)`;
+                
+                for (let j = 0; j < 2; j++) {
+                    const vx = Math.cos(angle) * speed + (Math.random() - 0.5) * 2;
+                    const vy = Math.sin(angle) * speed + (Math.random() - 0.5) * 2;
+                    particles.push(new Particle(px, py, vx, vy, color));
+                }
+            }
+            
+            hue += 0.5;
+            if (hue > 360) hue = 0;
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            createParticles(e.offsetX, e.offsetY, lastX, lastY);
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            particles = [];
+        });
+
+        document.getElementById('gravityToggle').addEventListener('click', (e) => {
+            gravityEnabled = !gravityEnabled;
+            e.target.textContent = gravityEnabled ? '重力: ON' : '重力: OFF';
+            e.target.classList.toggle('off', !gravityEnabled);
+        });
+
+        function animate() {
+            ctx.fillStyle = 'rgba(26, 26, 46, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles = particles.filter(p => p.life > 0);
+
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = Math.min(window.innerWidth - 40, 1200);
+            canvas.height = Math.min(window.innerHeight - 120, 700);
+        });
+    </script>
+</body>
+</html>

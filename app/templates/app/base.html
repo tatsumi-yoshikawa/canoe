@@ -1,1 +1,195 @@
-<h1>base.html</h1>
+<!-- <h1>base.html</h1>
+<h2>Gemini による</h2> -->
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Life Sandbox</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #050505;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            color: white;
+        }
+        canvas {
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            max-width: 250px;
+        }
+        h1 { font-size: 18px; margin: 0 0 10px 0; color: #00d4ff; }
+        p { font-size: 12px; opacity: 0.8; line-height: 1.5; }
+        .controls { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        button {
+            background: #00d4ff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover { background: #0099cc; }
+        .stat { font-family: monospace; font-size: 11px; margin-top: 10px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <h1>Particle Life</h1>
+    <p>単純な物理法則から、細胞や微生物のような「意思」を持った動きが生まれます。</p>
+    <div class="controls">
+        <button onclick="resetRules()">ルールを再生成 (Mutation)</button>
+        <button onclick="resetParticles()">配置をリセット</button>
+    </div>
+    <div class="stat" id="fps">FPS: 60</div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const fpsDisplay = document.getElementById('fps');
+
+    let width, height;
+    const colors = ['#FF3E3E', '#3EFF8B', '#3E9BFF', '#FFEB3E', '#FF3EFA'];
+    const numColors = colors.length;
+    const numParticles = 800;
+    
+    // 粒子間の相互作用マトリックス (引力・斥力)
+    let rules = [];
+    
+    // 粒子データ
+    let particles = [];
+
+    function init() {
+        resize();
+        resetRules();
+        resetParticles();
+        requestAnimationFrame(update);
+    }
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+
+    function resetRules() {
+        rules = [];
+        for (let i = 0; i < numColors; i++) {
+            rules[i] = [];
+            for (let j = 0; j < numColors; j++) {
+                // -1.0(強い斥力) から 1.0(強い引力) までのランダムな値
+                rules[i][j] = (Math.random() * 2 - 1);
+            }
+        }
+    }
+
+    function createParticle(x, y, colorIdx) {
+        return { x, y, vx: 0, vy: 0, color: colors[colorIdx], type: colorIdx };
+    }
+
+    function resetParticles() {
+        particles = [];
+        for (let i = 0; i < numParticles; i++) {
+            particles.push(createParticle(
+                Math.random() * width,
+                Math.random() * height,
+                Math.floor(Math.random() * numColors)
+            ));
+        }
+    }
+
+    // 物理演算のコア
+    function applyRules() {
+        for (let i = 0; i < particles.length; i++) {
+            let p1 = particles[i];
+            let fx = 0;
+            let fy = 0;
+
+            for (let j = 0; j < particles.length; j++) {
+                if (i === j) continue;
+                let p2 = particles[j];
+                
+                let dx = p1.x - p2.x;
+                let dy = p1.y - p2.y;
+                
+                // 画面端のループ（トーラス構造）
+                if (dx > width / 2) dx -= width;
+                if (dx < -width / 2) dx += width;
+                if (dy > height / 2) dy -= height;
+                if (dy < -height / 2) dy += height;
+
+                let d = Math.sqrt(dx * dx + dy * dy);
+
+                if (d > 0 && d < 150) {
+                    let force = rules[p1.type][p2.type];
+                    // 近すぎると斥力が働く（重なり防止）
+                    if (d < 20) {
+                        let forceNear = (20 - d) * 0.5;
+                        fx += (dx / d) * forceNear;
+                        fy += (dy / d) * forceNear;
+                    }
+                    // 通常の距離での引力・斥力
+                    let f = force * (1 / d);
+                    fx += dx * f;
+                    fy += dy * f;
+                }
+            }
+
+            // 速度に加算 (摩擦 0.85)
+            p1.vx = (p1.vx + fx) * 0.4;
+            p1.vy = (p1.vy + fy) * 0.4;
+            p1.x += p1.vx;
+            p1.y += p1.vy;
+
+            // 画面外に出た場合のループ処理
+            if (p1.x < 0) p1.x = width;
+            if (p1.x > width) p1.x = 0;
+            if (p1.y < 0) p1.y = height;
+            if (p1.y > height) p1.y = 0;
+        }
+    }
+
+    let lastTime = 0;
+    function update(time) {
+        const dt = time - lastTime;
+        lastTime = time;
+        if (dt > 0) fpsDisplay.innerText = `FPS: ${Math.round(1000 / dt)}`;
+
+        applyRules();
+
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, width, height);
+
+        for (let p of particles) {
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    window.addEventListener('resize', resize);
+    init();
+
+</script>
+</body>
+</html>
