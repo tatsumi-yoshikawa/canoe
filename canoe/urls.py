@@ -20,3 +20,11 @@ from django.urls import path
 urlpatterns = [
     path('admin/', admin.site.urls),
 ]
+
+
+# Postscript
+from django.urls import include
+
+urlpatterns += [
+    path('app/', include('app.urls')), 
+]
