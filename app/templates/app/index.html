@@ -1,6 +1,66 @@
+{% extends 'app/base.html' %}
+
+{% block content %}
+<div class="p-4 border-b border-gray-100">
+    <!-- 
+      Alpine.js (x-data) で文字数カウントの状態管理 
+      HTMX (hx-post) で非同期送信
+      hx-on::after-request で送信後にフォームをクリア
+    -->
+    <form 
+        x-data="{ content: '' }" 
+        hx-post="{% url 'create_tweet' %}" 
+        hx-target="#timeline" 
+        hx-swap="afterbegin"
+        @htmx:after-request="content = ''" 
+    >
+        {% csrf_token %}
+        
+        <div class="mb-4">
+            {{ form.content }}
+        </div>
+
+        <div class="flex justify-between items-center">
+            <!-- 文字数カウンター (Alpine) -->
+            <span 
+                class="text-sm" 
+                :class="content.length > 280 ? 'text-red-500' : 'text-gray-400'"
+                x-text="content.length + '/280'"
+            ></span>
+
+            <!-- 送信ボタン -->
+            <button 
+                type="submit" 
+                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full disabled:opacity-50 transition"
+                :disabled="content.length === 0 || content.length > 280"
+            >
+                ツイートする
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- タイムライン (新規ツイートはここに挿入されます) -->
+<div id="timeline" class="divide-y divide-gray-100">
+    {% for tweet in tweets %}
+        {% include 'app/partials/tweet.html' %}
+    {% endfor %}
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
 <!-- <h1>index.html</h1>
 <h2>Claude</h2> -->
 
+<!-- 
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -245,4 +305,4 @@
         });
     </script>
 </body>
-</html>
+</html> -->

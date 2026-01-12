@@ -1,0 +1,36 @@
+<!-- ツイートカード -->
+<div class="p-4 hover:bg-gray-50 transition duration-200 animate-fade-in-up">
+    <div class="flex space-x-3">
+        <!-- アイコン（ダミー） -->
+        <div class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold">
+                U
+            </div>
+        </div>
+        
+        <div class="flex-1">
+            <div class="flex items-center space-x-2">
+                <span class="font-bold text-gray-900">User</span>
+                <span class="text-sm text-gray-500">@username · {{ tweet.created_at|date:"n月j日" }}</span>
+            </div>
+            
+            <p class="text-gray-800 mt-1 whitespace-pre-wrap">{{ tweet.content }}</p>
+
+            <div class="mt-3 flex items-center space-x-8 text-gray-500">
+                <!-- いいねボタンのパーツ読み込み -->
+                {% include 'app/partials/like_button.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 新規追加時のアニメーション */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up {
+        animation: fadeInUp 0.4s ease-out forwards;
+    }
+</style>
