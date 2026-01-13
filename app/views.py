@@ -17,30 +17,63 @@ from django.shortcuts import render
 #     return render(request, 'app/detail.html')
 
 
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from app.models import Tweet
-from app.forms import TweetForm
+from app.forms import TweetForm, UserUpdateForm
 
-def index(request):
-    tweets = Tweet.objects.order_by('-created_at')
+
+@login_required
+def timeline(request):
+    # Userモデルのみ結合（Profile結合は削除）
+    tweets = Tweet.objects.select_related('user').prefetch_related('likes')
     form = TweetForm()
-    return render(request, 'app/index.html', {'tweets': tweets, 'form': form})
+    return render(request, 'app/timeline.html', {
+        'tweets': tweets,
+        'form': form
+    })
 
-def create_tweet(request):
-    if request.method == "POST":
-        form = TweetForm(request.POST)
-        if form.is_valid():
-            tweet = form.save()
-            # HTMXリクエストに対しては、作成されたツイートのHTML断片だけを返す
-            return render(request, 'app/partials/tweet.html', {'tweet': tweet})
-    return HttpResponse(status=400)
 
-def like_tweet(request, tweet_id):
-    if request.method == "POST":
-        tweet = get_object_or_404(Tweet, pk=tweet_id)
-        tweet.likes += 1
+@login_required
+@require_http_methods(["POST"])
+def tweet_create(request):
+    form = TweetForm(request.POST)
+    if form.is_valid():
+        tweet = form.save(commit=False)
+        tweet.user = request.user
         tweet.save()
-        # いいねボタン部分だけを更新するために、ボタンのHTML断片を返す
-        return render(request, 'app/partials/like_button.html', {'tweet': tweet})
-    return HttpResponse(status=400)
+        return render(request, 'app/partials/tweet.html', {'tweet': tweet})
+    return render(request, 'app/partials/tweet.html', {'error': True}) # 簡易エラー処理
+
+
+@login_required
+@require_http_methods(["POST"])
+def like_toggle(request, pk):
+    tweet = get_object_or_404(Tweet, pk=pk)
+    user = request.user
+    
+    if user in tweet.likes.all():
+        tweet.likes.remove(user)
+        is_liked = False
+    else:
+        tweet.likes.add(user)
+        is_liked = True
+        
+    return render(request, 'app/partials/like_button.html', {
+        'tweet': tweet,
+        'is_liked': is_liked
+    })
+
+
+@login_required
+def profile_edit(request):
+    if request.method == 'POST':
+        form = UserUpdateForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('timeline')
+    else:
+        form = UserUpdateForm(instance=request.user)
+
+    return render(request, 'app/profile_edit.html', {'form': form})

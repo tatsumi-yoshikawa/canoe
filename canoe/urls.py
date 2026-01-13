@@ -26,5 +26,6 @@ urlpatterns = [
 from django.urls import include
 
 urlpatterns += [
-    path('app/', include('app.urls')), 
+    # path('app/', include('app.urls')), 
+    path('', include('app.urls')), 
 ]
