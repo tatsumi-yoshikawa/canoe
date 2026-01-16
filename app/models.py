@@ -22,7 +22,7 @@ class Post(models.Model):
     """投稿モデル"""
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
-    liked_users = models.ManyToManyField(User, through='Like', through_fields=('post', 'user'))
+    liked_users = models.ManyToManyField(User, through='GoodBad', through_fields=('post', 'user'))
     title = models.CharField(max_length=200, help_text='タイトル')
     content = models.TextField(blank=True, null=True, help_text='本文')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -38,8 +38,8 @@ class Post(models.Model):
 class GoodBad(models.Model):
     """グッドバッドモデル（中間テーブル）"""
     
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='goodbad')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='goodbad')
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
