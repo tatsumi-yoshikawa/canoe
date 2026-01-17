@@ -8,6 +8,9 @@ from django.contrib.auth.models import AbstractBaseUser
 class User(AbstractBaseUser): 
     """カスタムユーザーモデル"""
 
+    username = 
+    email = 
+    password = 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
