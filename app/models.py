@@ -2,7 +2,7 @@ from django.db import models
 
 # Create your models here.
 
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 
 class User(AbstractBaseUser): 
@@ -19,6 +19,66 @@ class User(AbstractBaseUser):
     
     def __str__(self):
         return self.username
+
+
+
+
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, name, password=None, **extra_fields):
+        """通常ユーザーを作成して保存する"""
+        if not email:
+            raise ValueError('メールアドレスは必須です')
+        
+        email = self.normalize_email(email)
+        user = self.model(email=email, name=name, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, name, password=None, **extra_fields):
+        """管理権限を持つユーザーを作成して保存する代"""
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        return self.create_user(email, name, password, **extra_fields)
+
+class CustomUser(AbstractBaseUser, PermissionsMixin):
+    email = models.EmailField(unique=True, verbose_name='メールアドレス')
+    name = models.CharField(max_length=255, verbose_name='名前')
+    profile_image = models.ImageField(upload_to='profile_pics/', null=True, blank=True, verbose_name='プロフィール画像')
+    bio = models.TextField(max_length=500, blank=True, verbose_name='自己紹介文')
+    
+    # Djangoの管理画面や権限システムに必要
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    objects = CustomUserManager()
+
+    # ログイン時に使用するフィールドをメールアドレスに変更
+    USERNAME_FIELD = 'email'
+    # createsuperuserコマンドで入力を求められるフィールド（email, password以外）
+    REQUIRED_FIELDS = ['name']
+
+    def __str__(self):
+        return self.email
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Post(models.Model):
