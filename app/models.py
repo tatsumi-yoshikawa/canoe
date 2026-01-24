@@ -24,6 +24,11 @@
 
 
 
+
+
+
+
+
 # class CustomUserManager(BaseUserManager):
 #     def create_user(self, email, name, password=None, **extra_fields):
 #         """通常ユーザーを作成して保存する"""
@@ -62,15 +67,6 @@
 
 #     def __str__(self):
 #         return self.email
-
-
-
-
-
-
-
-
-
 
 
 
