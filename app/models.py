@@ -106,4 +106,3 @@ class GoodBad(models.Model):
     
     def __str__(self):
         return f'{self.user.username} likes {self.post.title}'
-
